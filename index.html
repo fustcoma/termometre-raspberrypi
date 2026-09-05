@@ -1,24 +1,44 @@
 <!DOCTYPE html>
 <html lang="ca">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Temperatura Raspberry Pi</title>
+    <title>Estació meteorològica</title>
 
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            padding-top: 100px;
+            padding: 60px 20px;
         }
 
         h1 {
             font-size: 40px;
         }
 
-        #temperatura {
-            font-size: 60px;
+        .dades {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 50px;
+        }
+
+        .dada {
+            width: 200px;
+            padding: 25px;
+            border-radius: 15px;
+            background: #f1f1f1;
+        }
+
+        .dada h2 {
+            margin-bottom: 15px;
+        }
+
+        .valor {
+            font-size: 35px;
             font-weight: bold;
         }
     </style>
@@ -26,11 +46,35 @@
 
 <body>
 
-    <h1>🌡️ Temperatura</h1>
+    <h1>🌡️ Estació meteorològica</h1>
 
-    <div id="temperatura">Carregant...</div>
+    <div class="dades">
+
+        <div class="dada">
+            <h2>🌡️ Temperatura</h2>
+            <div class="valor" id="temperatura">
+                Carregant...
+            </div>
+        </div>
+
+        <div class="dada">
+            <h2>💧 Humitat</h2>
+            <div class="valor" id="humitat">
+                Carregant...
+            </div>
+        </div>
+
+        <div class="dada">
+            <h2>🌡️ Sensació tèrmica</h2>
+            <div class="valor" id="sensacio">
+                Carregant...
+            </div>
+        </div>
+
+    </div>
 
     <script src="script.js"></script>
 
 </body>
+
 </html>
