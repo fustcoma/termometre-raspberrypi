@@ -1,32 +1,34 @@
-fetch("pi.txt")
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("No s'ha pogut trobar pi.txt");
-        }
+function carregarDades() {
+    fetch("pi.txt?t=" + Date.now())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("No s'ha pogut trobar pi.txt");
+            }
+            return response.text();
+        })
+        .then(data => {
+            const valors = data.trim().split("\n");
 
-        return response.text();
-    })
-    .then(data => {
+            const temperatura = valors[0];
+            const humitat = valors[1];
+            const sensacio = valors[2];
 
-        const valors = data.trim().split("\n");
+            document.getElementById("temperatura").textContent =
+                temperatura + " °C";
 
-        const temperatura = valors[0];
-        const humitat = valors[1];
-        const sensacio = valors[2];
+            document.getElementById("humitat").textContent =
+                humitat + " %";
 
-        document.getElementById("temperatura").textContent =
-            temperatura + " °C";
+            document.getElementById("sensacio").textContent =
+                sensacio + " °C";
+        })
+        .catch(error => {
+            console.error(error);
+        });
+}
 
-        document.getElementById("humitat").textContent =
-            humitat + " %";
+// Carregar les dades en obrir la pàgina
+carregarDades();
 
-        document.getElementById("sensacio").textContent =
-            sensacio + " °C";
-    })
-    .catch(error => {
-        console.error(error);
-
-        document.getElementById("temperatura").textContent = "Error";
-        document.getElementById("humitat").textContent = "Error";
-        document.getElementById("sensacio").textContent = "Error";
-    });
+// Actualitzar cada 10 segons
+setInterval(carregarDades, 10000);
