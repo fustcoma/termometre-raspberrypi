@@ -2,96 +2,86 @@ import time
 import math
 import subprocess
 from pathlib import Path
+from datetime import datetime
 
 import board
 import adafruit_dht
 
 
-# DHT11 connectat al GPIO2 (pin físic 3)
+# =========================
+# CONFIGURACIÓ
+# =========================
+
+DURADA_MESURA = 60
+INTERVAL_LECTURA = 2
+
+ESPERA_ENTRE_MESURES = 10
+
+# Fer push cada 5 minuts
+INTERVAL_PUSH = 5 * 60
+
+
+# =========================
+# FITXERS
+# =========================
+
+repo = Path(__file__).resolve().parent
+
+fitxer_dades = repo / "pi.txt"
+fitxer_historial = repo / "historial.csv"
+
+
+# =========================
+# DHT11
+# =========================
+
 dht = adafruit_dht.DHT11(board.D2)
 
-# Carpeta on està aquest script i pi.txt
-repo = Path(__file__).resolve().parent
-fitxer = repo / "pi.txt"
+
+# =========================
+# CREAR HISTORIAL SI NO EXISTEIX
+# =========================
+
+if not fitxer_historial.exists():
+
+    with open(fitxer_historial, "w", encoding="utf-8") as f:
+
+        f.write(
+            "data,hora,temperatura,humitat,sensacio\n"
+        )
 
 
-while True:
+# =========================
+# GIT PUSH
+# =========================
 
-    print("\n=== Començant nova mesura ===")
+def pujar_github():
 
-    temperatures = []
-    humiditats = []
-    sensacions = []
-
-    # Mesurar durant 1 minut
-    inici = time.time()
-
-    while time.time() - inici < 60:
-
-        try:
-            temperatura = dht.temperature
-            humitat = dht.humidity
-
-            if temperatura is not None and humitat is not None:
-
-                # Càlcul de la sensació tèrmica
-                e = (humitat / 100) * 6.105 * math.exp(
-                    17.72 * temperatura / (237.7 + temperatura)
-                )
-
-                sensacio = temperatura + 0.33 * e - 4
-
-                temperatures.append(temperatura)
-                humiditats.append(humitat)
-                sensacions.append(sensacio)
-
-                print(
-                    f"Temperatura: {temperatura:.2f} °C | "
-                    f"Humitat: {humitat:.2f} % | "
-                    f"Sensació: {sensacio:.2f} °C"
-                )
-
-        except RuntimeError as error:
-            print("Error de lectura:", error)
-
-        time.sleep(2)
-
-    # Comprovar que tenim dades
-    if len(temperatures) == 0:
-        print("No s'han pogut obtenir dades.")
-        continue
-
-    # Calcular mitjanes
-    mitjana_temp = sum(temperatures) / len(temperatures)
-    mitjana_hum = sum(humiditats) / len(humiditats)
-    mitjana_sensacio = sum(sensacions) / len(sensacions)
-
-    print("\n=== RESULTAT ===")
-    print(f"Temperatura mitjana: {mitjana_temp:.2f} °C")
-    print(f"Humitat mitjana: {mitjana_hum:.2f} %")
-    print(f"Sensació mitjana: {mitjana_sensacio:.2f} °C")
-
-    # Escriure pi.txt
-    with open(fitxer, "w") as f:
-        f.write(f"{mitjana_temp:.2f}\n")
-        f.write(f"{mitjana_hum:.2f}\n")
-        f.write(f"{mitjana_sensacio:.2f}\n")
-
-    print("\npi.txt actualitzat.")
-
-    # Pujar a GitHub
     try:
+
+        print("📤 Pujant dades a GitHub...")
+
         subprocess.run(
-            ["git", "add", "pi.txt"],
+            ["git", "add", "pi.txt", "historial.csv"],
             cwd=repo,
             check=True
         )
 
-        subprocess.run(
-            ["git", "commit", "-m", "Actualitzar dades del sensor"],
+        resultat = subprocess.run(
+            [
+                "git",
+                "commit",
+                "-m",
+                "Actualitzar dades meteorologiques"
+            ],
             cwd=repo,
             check=False
         )
+
+        # Si no hi havia canvis, no passa res
+        if resultat.returncode != 0:
+            print("ℹ️ No hi havia canvis per fer commit.")
+            return True
 
         subprocess.run(
             ["git", "push"],
@@ -101,9 +91,232 @@ while True:
 
         print("✅ Dades pujades a GitHub!")
 
-    except subprocess.CalledProcessError as error:
-        print("❌ Error fent el push:", error)
+        return True
 
-    print("\nEsperant 10 segons abans de començar una nova mesura...")
+    except Exception as error:
 
-    time.sleep(10)
+        print(f"❌ Error fent git push: {error}")
+        print("🔄 Continuarem mesurant.")
+
+        return False
+
+
+# =========================
+# TEMPS DEL PRIMER PUSH
+# =========================
+
+ultima_push = time.time()
+
+
+# =========================
+# PROGRAMA PRINCIPAL
+# =========================
+
+print("🌡️ Estació meteorològica iniciada")
+print("📊 Historial activat")
+print("📤 GitHub s'actualitzarà cada 5 minuts")
+print("🔄 Programa infinit\n")
+
+
+while True:
+
+    try:
+
+        print("=" * 45)
+        print("📊 COMENÇANT NOVA MESURA")
+        print("=" * 45)
+
+        temperatures = []
+        humiditats = []
+        sensacions = []
+
+        inici = time.time()
+
+        # -------------------------
+        # MESURAR DURANT 1 MINUT
+        # -------------------------
+
+        while time.time() - inici < DURADA_MESURA:
+
+            try:
+
+                temperatura = dht.temperature
+                humitat = dht.humidity
+
+                if temperatura is not None and humitat is not None:
+
+                    # Sensació tèrmica
+                    e = (
+                        (humitat / 100)
+                        * 6.105
+                        * math.exp(
+                            17.72 * temperatura
+                            / (237.7 + temperatura)
+                        )
+                    )
+
+                    sensacio = temperatura + 0.33 * e - 4
+
+                    temperatures.append(temperatura)
+                    humiditats.append(humitat)
+                    sensacions.append(sensacio)
+
+                    print(
+                        f"🌡️ {temperatura:.2f} °C | "
+                        f"💧 {humitat:.2f} % | "
+                        f"🥵 {sensacio:.2f} °C"
+                    )
+
+            except RuntimeError as error:
+
+                print(f"⚠️ Error DHT11: {error}")
+
+            except Exception as error:
+
+                print(f"⚠️ Error inesperat DHT11: {error}")
+
+            time.sleep(INTERVAL_LECTURA)
+
+
+        # -------------------------
+        # COMPROVAR DADES
+        # -------------------------
+
+        if len(temperatures) == 0:
+
+            print("❌ No s'han obtingut dades.")
+            print("🔄 Tornant a intentar...\n")
+
+            time.sleep(5)
+            continue
+
+
+        # -------------------------
+        # MITJANES
+        # -------------------------
+
+        mitjana_temp = sum(temperatures) / len(temperatures)
+        mitjana_hum = sum(humiditats) / len(humiditats)
+        mitjana_sensacio = sum(sensacions) / len(sensacions)
+
+
+        # -------------------------
+        # DATA I HORA
+        # -------------------------
+
+        ara = datetime.now()
+
+        data = ara.strftime("%d/%m/%Y")
+        hora = ara.strftime("%H:%M:%S")
+
+
+        # -------------------------
+        # MOSTRAR RESULTAT
+        # -------------------------
+
+        print("\n" + "=" * 45)
+        print("📈 RESULTAT")
+        print("=" * 45)
+
+        print(f"🌡️ Temperatura: {mitjana_temp:.2f} °C")
+        print(f"💧 Humitat: {mitjana_hum:.2f} %")
+        print(f"🥵 Sensació: {mitjana_sensacio:.2f} °C")
+        print(f"🕐 Hora: {hora}")
+        print(f"📊 Lectures: {len(temperatures)}")
+
+
+        # -------------------------
+        # ACTUALITZAR PI.TXT
+        # -------------------------
+
+        with open(fitxer_dades, "w", encoding="utf-8") as f:
+
+            f.write(f"{mitjana_temp:.2f}\n")
+            f.write(f"{mitjana_hum:.2f}\n")
+            f.write(f"{mitjana_sensacio:.2f}\n")
+            f.write(f"{data} {hora}\n")
+
+
+        # -------------------------
+        # AFEGIR A HISTORIAL.CSV
+        # -------------------------
+
+        with open(
+            fitxer_historial,
+            "a",
+            encoding="utf-8"
+        ) as f:
+
+            f.write(
+                f"{data},"
+                f"{hora},"
+                f"{mitjana_temp:.2f},"
+                f"{mitjana_hum:.2f},"
+                f"{mitjana_sensacio:.2f}\n"
+            )
+
+
+        print("📝 pi.txt actualitzat.")
+        print("📚 historial.csv actualitzat.")
+
+
+        # -------------------------
+        # COMPROVAR SI TOCA PUSH
+        # -------------------------
+
+        temps_des_de_push = time.time() - ultima_push
+
+
+        if temps_des_de_push >= INTERVAL_PUSH:
+
+            if pujar_github():
+
+                ultima_push = time.time()
+
+        else:
+
+            minuts = int(
+                (INTERVAL_PUSH - temps_des_de_push) / 60
+            )
+
+            segons = int(
+                (INTERVAL_PUSH - temps_des_de_push) % 60
+            )
+
+            print(
+                f"⏳ Següent push en "
+                f"{minuts}m {segons}s"
+            )
+
+
+        # -------------------------
+        # ESPERAR
+        # -------------------------
+
+        print(
+            f"⏳ Esperant {ESPERA_ENTRE_MESURES} segons...\n"
+        )
+
+        time.sleep(ESPERA_ENTRE_MESURES)
+
+
+    except KeyboardInterrupt:
+
+        print("\n🛑 Programa aturat manualment.")
+
+        try:
+            dht.exit()
+        except:
+            pass
+
+        break
+
+
+    except Exception as error:
+
+        print("\n🚨 ERROR GENERAL:")
+        print(error)
+
+        print("🔄 Continuant en 10 segons...\n")
+
+        time.sleep(10)
