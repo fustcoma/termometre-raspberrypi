@@ -1,496 +1,614 @@
+
+// ==========================================
+// ESTACIÓ METEOROLÒGICA - script.js
+// ==========================================
+
+// Període seleccionat actualment
+let periodeActual = "24h";
+
+// Dades de l'historial
 let dadesHistorial = [];
 
+// Gràfics
 let graficaTemperatura = null;
 let graficaHumitat = null;
 let graficaSensacio = null;
 
-let periodeActual = "24h";
 
+// ==========================================
+// CARREGAR DADES ACTUALS
+// ==========================================
 
-// =========================
-// DADES ACTUALS
-// =========================
+async function carregarDades() {
 
-function carregarDades() {
+    try {
 
-    fetch("pi.txt?t=" + Date.now())
+        // El ?t= evita que el navegador faci servir la versió antiga
+        const resposta = await fetch("pi.txt?t=" + Date.now());
 
-        .then(response => {
+        if (!resposta.ok) {
+            throw new Error("No s'ha pogut carregar pi.txt");
+        }
 
-            if (!response.ok) {
-                throw new Error("No s'ha pogut trobar pi.txt");
-            }
+        const text = await resposta.text();
 
-            return response.text();
-        })
+        const linies = text
+            .trim()
+            .split("\n")
+            .map(linia => linia.trim());
 
-        .then(data => {
+        if (linies.length < 4) {
+            throw new Error("pi.txt no té el format esperat");
+        }
 
-            const valors = data.trim().split("\n");
+        const temperatura = linies[0];
+        const humitat = linies[1];
+        const sensacio = linies[2];
+        const actualitzacio = linies[3];
 
-            const temperatura = valors[0];
-            const humitat = valors[1];
-            const sensacio = valors[2];
-            const actualitzacio = valors[3];
+        // Actualitzar HTML
+        document.getElementById("temperatura").textContent = temperatura;
+        document.getElementById("humitat").textContent = humitat;
+        document.getElementById("sensacio").textContent = sensacio;
 
+        document.getElementById("actualitzacio").textContent =
+            "🟢 Última actualització: " + actualitzacio;
 
-            document.getElementById("temperatura").textContent =
-                temperatura + " °C";
+    } catch (error) {
 
-            document.getElementById("humitat").textContent =
-                humitat + " %";
+        console.error("Error carregant les dades:", error);
 
-            document.getElementById("sensacio").textContent =
-                sensacio + " °C";
-
-
-            if (actualitzacio) {
-
-                document.getElementById("actualitzacio").textContent =
-                    "🟢 Última actualització: " + actualitzacio;
-            }
-
-        })
-
-        .catch(error => {
-
-            console.error("❌ Error:", error);
-
-            document.getElementById("actualitzacio").textContent =
-                "🔴 No s'han pogut actualitzar les dades";
-        });
+        document.getElementById("actualitzacio").textContent =
+            "🔴 No s'han pogut carregar les dades";
+    }
 }
 
 
-// =========================
-// HISTORIAL
-// =========================
+// ==========================================
+// CARREGAR HISTORIAL CSV
+// ==========================================
 
-function carregarHistorial() {
+async function carregarHistorial() {
 
-    fetch("historial.csv?t=" + Date.now())
+    try {
 
-        .then(response => {
+        const resposta = await fetch("historial.csv?t=" + Date.now());
 
-            if (!response.ok) {
-                throw new Error("No s'ha trobat historial.csv");
-            }
+        // Si el CSV encara no existeix, no passa res
+        if (!resposta.ok) {
 
-            return response.text();
-        })
-
-        .then(data => {
-
-            const linies = data.trim().split("\n");
-
-            // Eliminar capçalera
-            linies.shift();
-
+            console.log("ℹ️ historial.csv encara no existeix.");
 
             dadesHistorial = [];
 
+            actualitzarGrafiques();
 
-            linies.forEach(linia => {
+            return;
+        }
 
-                const valors = linia.split(",");
+        const text = await resposta.text();
 
-                if (valors.length < 5) {
-                    return;
-                }
+        const linies = text
+            .trim()
+            .split("\n")
+            .map(linia => linia.trim())
+            .filter(linia => linia.length > 0);
 
+        // Si només hi ha la capçalera
+        if (linies.length <= 1) {
 
-                const data = valors[0];
-                const hora = valors[1];
-
-                const temperatura = parseFloat(valors[2]);
-                const humitat = parseFloat(valors[3]);
-                const sensacio = parseFloat(valors[4]);
-
-
-                // Convertir data + hora en una data JavaScript
-                const partsData = data.split("/");
-                const partsHora = hora.split(":");
-
-
-                const moment = new Date(
-                    parseInt(partsData[2]),
-                    parseInt(partsData[1]) - 1,
-                    parseInt(partsData[0]),
-                    parseInt(partsHora[0]),
-                    parseInt(partsHora[1]),
-                    parseInt(partsHora[2])
-                );
-
-
-                dadesHistorial.push({
-
-                    moment: moment,
-
-                    etiqueta: hora,
-
-                    temperatura: temperatura,
-
-                    humitat: humitat,
-
-                    sensacio: sensacio
-                });
-
-            });
-
+            dadesHistorial = [];
 
             actualitzarGrafiques();
 
-        })
+            return;
+        }
 
-        .catch(error => {
+        // Saltar la capçalera
+        dadesHistorial = [];
 
-            console.error(
-                "❌ Error carregant historial:",
-                error
-            );
+        for (let i = 1; i < linies.length; i++) {
 
-        });
+            const parts = linies[i].split(",");
+
+            if (parts.length < 5) {
+                continue;
+            }
+
+            const data = parts[0];
+            const hora = parts[1];
+            const temperatura = parseFloat(parts[2]);
+            const humitat = parseFloat(parts[3]);
+            const sensacio = parseFloat(parts[4]);
+
+            if (
+                isNaN(temperatura) ||
+                isNaN(humitat) ||
+                isNaN(sensacio)
+            ) {
+                continue;
+            }
+
+            dadesHistorial.push({
+                data: data,
+                hora: hora,
+                temperatura: temperatura,
+                humitat: humitat,
+                sensacio: sensacio,
+                dataHora: convertirData(data, hora)
+            });
+        }
+
+        console.log(
+            "📊 Dades de l'historial carregades:",
+            dadesHistorial.length
+        );
+
+        actualitzarGrafiques();
+
+    } catch (error) {
+
+        console.error("Error carregant historial.csv:", error);
+
+        dadesHistorial = [];
+
+        actualitzarGrafiques();
+    }
 }
 
 
-// =========================
+// ==========================================
+// CONVERTIR DATA DEL CSV
+// DD/MM/YYYY + HH:MM:SS
+// ==========================================
+
+function convertirData(data, hora) {
+
+    try {
+
+        const partsData = data.split("/");
+
+        const partsHora = hora.split(":");
+
+        if (partsData.length !== 3 || partsHora.length < 2) {
+            return null;
+        }
+
+        const dia = parseInt(partsData[0]);
+        const mes = parseInt(partsData[1]) - 1;
+        const any = parseInt(partsData[2]);
+
+        const h = parseInt(partsHora[0]);
+        const m = parseInt(partsHora[1]);
+        const s = partsHora.length >= 3
+            ? parseInt(partsHora[2])
+            : 0;
+
+        return new Date(
+            any,
+            mes,
+            dia,
+            h,
+            m,
+            s
+        );
+
+    } catch (error) {
+
+        return null;
+    }
+}
+
+
+// ==========================================
 // CANVIAR PERÍODE
-// =========================
+// ==========================================
 
 function canviarPeriode(periode) {
 
     periodeActual = periode;
 
+    console.log("📅 Període seleccionat:", periode);
+
     // Treure classe activa de tots els botons
-    document.querySelectorAll(".periode").forEach(botó => {
+    const botons = document.querySelectorAll(".periode");
 
-        botó.classList.remove("actiu");
-
+    botons.forEach(boto => {
+        boto.classList.remove("actiu");
     });
 
+    // Activar el botó seleccionat
+    const botoSeleccionat = document.querySelector(
+        `.periode[data-periode="${periode}"]`
+    );
 
-    // Activar el botó actual
-    document
-        .querySelector(`[data-periode="${periode}"]`)
-        .classList.add("actiu");
+    if (botoSeleccionat) {
+        botoSeleccionat.classList.add("actiu");
+    }
 
-
+    // Actualitzar gràfics
     actualitzarGrafiques();
 }
 
 
-// =========================
+// ==========================================
 // OBTENIR DADES DEL PERÍODE
-// =========================
+// ==========================================
 
 function obtenirDadesPeriode() {
 
+    // Si no hi ha dades
     if (dadesHistorial.length === 0) {
         return [];
     }
 
-
+    // "Tot"
     if (periodeActual === "tot") {
-
-        return dadesHistorial;
+        return [...dadesHistorial];
     }
 
-
-    const ara = new Date();
-
-    let temps;
+    let milisegons = 0;
 
     switch (periodeActual) {
 
         case "1h":
-            temps = 60 * 60 * 1000;
+            milisegons = 60 * 60 * 1000;
             break;
 
         case "6h":
-            temps = 6 * 60 * 60 * 1000;
+            milisegons = 6 * 60 * 60 * 1000;
             break;
 
         case "24h":
-            temps = 24 * 60 * 60 * 1000;
+            milisegons = 24 * 60 * 60 * 1000;
             break;
 
         case "7d":
-            temps = 7 * 24 * 60 * 60 * 1000;
+            milisegons = 7 * 24 * 60 * 60 * 1000;
             break;
+
+        default:
+            return [...dadesHistorial];
     }
 
+    const ara = new Date();
 
     const inici = new Date(
-        ara.getTime() - temps
+        ara.getTime() - milisegons
     );
 
+    return dadesHistorial.filter(dada => {
 
-    return dadesHistorial.filter(
-        dada => dada.moment >= inici
-    );
+        if (!dada.dataHora) {
+            return false;
+        }
+
+        return dada.dataHora >= inici;
+    });
 }
 
 
-// =========================
-// ACTUALITZAR GRÀFIQUES
-// =========================
+// ==========================================
+// CREAR ETIQUETA DE L'EIX X
+// ==========================================
+
+function obtenirEtiqueta(dada) {
+
+    if (periodeActual === "7d" || periodeActual === "tot") {
+
+        return `${dada.data} ${dada.hora.substring(0, 5)}`;
+
+    }
+
+    return dada.hora.substring(0, 5);
+}
+
+
+// ==========================================
+// ACTUALITZAR ELS GRÀFICS
+// ==========================================
 
 function actualitzarGrafiques() {
 
-    const dades = obterDadesSegures();
+    const dades = obtenirDadesPeriode();
 
-    if (dades.length === 0) {
-        return;
-    }
-
-
-    const labels = dades.map(
-        dada => dada.etiqueta
+    console.log(
+        `📈 Actualitzant gràfics: ${dades.length} dades`
     );
 
 
-    const temperatures = dades.map(
-        dada => dada.temperatura
+    // ------------------------------------------
+    // PREPARAR ETIQUETES
+    // ------------------------------------------
+
+    const etiquetes = dades.map(dada =>
+        obtenirEtiqueta(dada)
     );
 
 
-    const humiditats = dades.map(
-        dada => dada.humitat
+    // ------------------------------------------
+    // TEMPERATURA
+    // ------------------------------------------
+
+    const temperatures = dades.map(dada =>
+        dada.temperatura
     );
 
 
-    const sensacions = dades.map(
-        dada => dada.sensacio
+    // ------------------------------------------
+    // HUMITAT
+    // ------------------------------------------
+
+    const humiditats = dades.map(dada =>
+        dada.humitat
     );
 
 
-    crearGraficaTemperatura(
-        labels,
-        temperatures
+    // ------------------------------------------
+    // SENSACIÓ TÈRMICA
+    // ------------------------------------------
+
+    const sensacions = dades.map(dada =>
+        dada.sensacio
     );
 
 
-    crearGraficaHumitat(
-        labels,
-        humiditats
-    );
-
-
-    crearGraficaSensacio(
-        labels,
-        sensacions
-    );
-}
-
-
-// Evitar errors si encara no hi ha dades
-function obterDadesSegures() {
-
-    return obtenirDadesPeriode();
-}
-
-
-// =========================
-// GRÀFICA TEMPERATURA
-// =========================
-
-function crearGraficaTemperatura(labels, dades) {
-
-    const canvas =
-        document.getElementById("graficaTemperatura");
-
+    // ==========================================
+    // ELIMINAR GRÀFICS ANTICS
+    // ==========================================
 
     if (graficaTemperatura) {
         graficaTemperatura.destroy();
     }
 
-
-    graficaTemperatura = new Chart(canvas, {
-
-        type: "line",
-
-        data: {
-
-            labels: labels,
-
-            datasets: [{
-
-                label: "Temperatura (°C)",
-
-                data: dades,
-
-                tension: 0.3,
-
-                pointRadius: 2
-            }]
-        },
-
-        options: {
-
-            responsive: true,
-
-            interaction: {
-
-                mode: "index",
-
-                intersect: false
-            },
-
-            scales: {
-
-                y: {
-
-                    title: {
-
-                        display: true,
-
-                        text: "°C"
-                    }
-                }
-            }
-        }
-    });
-}
-
-
-// =========================
-// GRÀFICA HUMITAT
-// =========================
-
-function crearGraficaHumitat(labels, dades) {
-
-    const canvas =
-        document.getElementById("graficaHumitat");
-
-
     if (graficaHumitat) {
         graficaHumitat.destroy();
     }
-
-
-    graficaHumitat = new Chart(canvas, {
-
-        type: "line",
-
-        data: {
-
-            labels: labels,
-
-            datasets: [{
-
-                label: "Humitat (%)",
-
-                data: dades,
-
-                tension: 0.3,
-
-                pointRadius: 2
-            }]
-        },
-
-        options: {
-
-            responsive: true,
-
-            interaction: {
-
-                mode: "index",
-
-                intersect: false
-            },
-
-            scales: {
-
-                y: {
-
-                    title: {
-
-                        display: true,
-
-                        text: "%"
-                    }
-                }
-            }
-        }
-    });
-}
-
-
-// =========================
-// GRÀFICA SENSACIÓ
-// =========================
-
-function crearGraficaSensacio(labels, dades) {
-
-    const canvas =
-        document.getElementById("graficaSensacio");
-
 
     if (graficaSensacio) {
         graficaSensacio.destroy();
     }
 
 
-    graficaSensacio = new Chart(canvas, {
+    // ==========================================
+    // GRÀFIC TEMPERATURA
+    // ==========================================
 
-        type: "line",
+    const ctxTemperatura = document
+        .getElementById("graficaTemperatura")
+        .getContext("2d");
 
-        data: {
+    graficaTemperatura = new Chart(
+        ctxTemperatura,
+        {
+            type: "line",
 
-            labels: labels,
+            data: {
+                labels: etiquetes,
 
-            datasets: [{
+                datasets: [
+                    {
+                        label: "Temperatura (°C)",
 
-                label: "Sensació tèrmica (°C)",
+                        data: temperatures,
 
-                data: dades,
+                        borderWidth: 2,
 
-                tension: 0.3,
+                        tension: 0.3,
 
-                pointRadius: 2
-            }]
-        },
+                        pointRadius: 2,
 
-        options: {
-
-            responsive: true,
-
-            interaction: {
-
-                mode: "index",
-
-                intersect: false
+                        spanGaps: true
+                    }
+                ]
             },
 
-            scales: {
+            options: {
 
-                y: {
+                responsive: true,
 
-                    title: {
+                maintainAspectRatio: false,
 
-                        display: true,
+                interaction: {
+                    intersect: false,
+                    mode: "index"
+                },
 
-                        text: "°C"
+                scales: {
+
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Temperatura (°C)"
+                        }
+                    },
+
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Hora"
+                        },
+
+                        ticks: {
+                            maxTicksLimit: 12
+                        }
                     }
                 }
             }
         }
-    });
+    );
+
+
+    // ==========================================
+    // GRÀFIC HUMITAT
+    // ==========================================
+
+    const ctxHumitat = document
+        .getElementById("graficaHumitat")
+        .getContext("2d");
+
+    graficaHumitat = new Chart(
+        ctxHumitat,
+        {
+            type: "line",
+
+            data: {
+                labels: etiquetes,
+
+                datasets: [
+                    {
+                        label: "Humitat (%)",
+
+                        data: humiditats,
+
+                        borderWidth: 2,
+
+                        tension: 0.3,
+
+                        pointRadius: 2,
+
+                        spanGaps: true
+                    }
+                ]
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                interaction: {
+                    intersect: false,
+                    mode: "index"
+                },
+
+                scales: {
+
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Humitat (%)"
+                        }
+                    },
+
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Hora"
+                        },
+
+                        ticks: {
+                            maxTicksLimit: 12
+                        }
+                    }
+                }
+            }
+        }
+    );
+
+
+    // ==========================================
+    // GRÀFIC SENSACIÓ
+    // ==========================================
+
+    const ctxSensacio = document
+        .getElementById("graficaSensacio")
+        .getContext("2d");
+
+    graficaSensacio = new Chart(
+        ctxSensacio,
+        {
+            type: "line",
+
+            data: {
+                labels: etiquetes,
+
+                datasets: [
+                    {
+                        label: "Sensació tèrmica (°C)",
+
+                        data: sensacions,
+
+                        borderWidth: 2,
+
+                        tension: 0.3,
+
+                        pointRadius: 2,
+
+                        spanGaps: true
+                    }
+                ]
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                interaction: {
+                    intersect: false,
+                    mode: "index"
+                },
+
+                scales: {
+
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Sensació tèrmica (°C)"
+                        }
+                    },
+
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Hora"
+                        },
+
+                        ticks: {
+                            maxTicksLimit: 12
+                        }
+                    }
+                }
+            }
+        }
+    );
 }
 
 
-// =========================
-// INICI
-// =========================
+// ==========================================
+// INICIAR
+// ==========================================
 
+console.log("🌤️ Estació meteorològica iniciada.");
+
+// Carregar dades immediatament
 carregarDades();
-
 carregarHistorial();
 
 
+// ==========================================
+// ACTUALITZACIÓ AUTOMÀTICA
+// ==========================================
+
 // Dades actuals cada 10 segons
-setInterval(carregarDades, 10000);
+setInterval(() => {
+
+    console.log("🔄 Actualitzant dades actuals...");
+
+    carregarDades();
+
+}, 10000);
 
 
 // Historial cada 5 minuts
-setInterval(carregarHistorial, 300000);
+setInterval(() => {
+
+    console.log("📊 Actualitzant historial...");
+
+    carregarHistorial();
+
+}, 5 * 60 * 1000);
+
