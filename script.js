@@ -146,7 +146,7 @@ const resposta = await fetch("historial.csv?t=" + Date.now());
 } catch (error) {
     console.error("Error carregant l'historial:", error);
 }
-```
+
 
 }
 
@@ -154,7 +154,7 @@ function convertirDataHora(data, hora) {
 const partsData = data.split("/");
 const partsHora = hora.split(":");
 
-```
+
 if (partsData.length !== 3 || partsHora.length < 2) {
     return new Date(NaN);
 }
