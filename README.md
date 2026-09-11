@@ -1,6 +1,6 @@
-# Estació Meteorològica amb Raspberry Pi
+# π Weather
 
-Estació meteorològica basada en una Raspberry Pi Zero W i un sensor DHT11.
+π Weather és una estació meteorològica intel·ligent amb Raspberry Pi Zero i sensor DHT11 per monitoritzar temperatura, humitat i sensació tèrmica en temps real.
 
 El sistema mesura temperatura i humitat, calcula la sensació tèrmica, guarda un historial de les mesures i publica automàticament les dades a GitHub. Aquestes dades són utilitzades per una pàgina web publicada amb GitHub Pages.
 
@@ -70,7 +70,7 @@ No cal tenir la pàgina web oberta a la Raspberry Pi.
 En aquest projecte el repositori és:
 
 ```text
-fustcoma/termometre-raspberrypi
+fustcoma/pi-weather
 ```
 
 ---
@@ -102,7 +102,7 @@ Si el mòdul DHT11 no incorpora una resistència pull-up, es pot utilitzar una r
 El repositori conté:
 
 ```text
-termometre-raspberrypi/
+pi-weather/
 |
 +-- index.html
 +-- script.js
@@ -180,7 +180,7 @@ Mostra:
 
 * Temperatura actual.
 * Humitat actual.
-* Sensació tèrmica.
+* Sensació tèrmica actual.
 * Data i hora de l'última actualització.
 * Gràfica de temperatura.
 * Gràfica d'humitat.
@@ -222,13 +222,13 @@ Des de la Raspberry Pi:
 
 ```bash
 cd ~
-git clone https://github.com/fustcoma/termometre-raspberrypi.git
+git clone https://github.com/fustcoma/pi-weather.git
 ```
 
 Entrar al projecte:
 
 ```bash
-cd ~/termometre-raspberrypi
+cd ~/pi-weather
 ```
 
 ---
@@ -277,7 +277,7 @@ Git necessita saber quin usuari farà els commits.
 Configurar el nom:
 
 ```bash
-git config --global user.name "fustcoma"
+git config --global user.name "EL_TEU_USERNAME"
 ```
 
 Configurar el correu:
@@ -331,7 +331,7 @@ Only select repositories
 I selecciona:
 
 ```text
-fustcoma/termometre-raspberrypi
+usuari/nom-del-repositori
 ```
 
 A `Repository permissions`, busca:
@@ -377,7 +377,7 @@ git config --global credential.helper store
 Després fer un primer push:
 
 ```bash
-cd ~/termometre-raspberrypi
+cd ~/pi-weather
 git push
 ```
 
@@ -389,10 +389,6 @@ Password:
 ```
 
 A `Username`, utilitza el teu nom d'usuari de GitHub:
-
-```text
-fustcoma
-```
 
 A `Password`, enganxa el Personal Access Token.
 
@@ -419,7 +415,7 @@ Abans de configurar l'automatització, és recomanable comprovar que la Raspberr
 Executar:
 
 ```bash
-cd ~/termometre-raspberrypi
+cd ~/pi-weather
 git status
 ```
 
@@ -444,7 +440,7 @@ source ~/dht-env/bin/activate
 Entrar al projecte:
 
 ```bash
-cd ~/termometre-raspberrypi
+cd ~/pi-weather
 ```
 
 Executar:
@@ -513,8 +509,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/termometre-raspberrypi
-ExecStart=/home/pi/dht-env/bin/python /home/pi/termometre-raspberrypi/temperatura.py
+WorkingDirectory=/home/pi/pi-weather
+ExecStart=/home/pi/dht-env/bin/python /home/pi/pi-weather/temperatura.py
 Restart=always
 RestartSec=10
 
@@ -834,17 +830,6 @@ en lloc de:
 
 Això evita crear línies incorrectes quan la Raspberry està apagada, perd connexió, el sensor deixa de funcionar o simplement no hi ha dades durant un període.
 
-El límit es pot modificar a `script.js`:
-
-```javascript
-const SALT_MAXIM = 5 * 60 * 1000;
-```
-
-Per exemple, per utilitzar 10 minuts:
-
-```javascript
-const SALT_MAXIM = 10 * 60 * 1000;
-```
 
 ---
 
@@ -873,7 +858,7 @@ La pàgina web està pensada per funcionar amb GitHub Pages.
 El repositori és:
 
 ```text
-https://github.com/fustcoma/termometre-raspberrypi
+https://github.com/fustcoma/pi-weather
 ```
 
 GitHub Pages utilitza:
@@ -908,7 +893,7 @@ Després, si s'ha modificat `temperatura.py`, cal actualitzar també la còpia d
 A la Raspberry:
 
 ```bash
-cd ~/termometre-raspberrypi
+cd ~/pi-weather
 git pull
 ```
 
@@ -927,7 +912,7 @@ Això és important perquè el servei que ja està funcionant continuarà utilit
 Si només s'ha modificat `temperatura.py`:
 
 ```bash
-cd ~/termometre-raspberrypi
+cd ~/tpi-weather
 git pull
 sudo systemctl restart estacio.service
 ```
@@ -1202,14 +1187,14 @@ Comprovar els camins del servei:
 
 ```ini
 User=pi
-WorkingDirectory=/home/pi/termometre-raspberrypi
-ExecStart=/home/pi/dht-env/bin/python /home/pi/termometre-raspberrypi/temperatura.py
+WorkingDirectory=/home/pi/pi-weather
+ExecStart=/home/pi/dht-env/bin/python /home/pi/pi-weather/temperatura.py
 ```
 
 També comprovar que el fitxer existeixi:
 
 ```bash
-ls ~/termometre-raspberrypi/temperatura.py
+ls ~/pi-weather/temperatura.py
 ```
 
 I que existeixi el Python de l'entorn virtual:
@@ -1225,7 +1210,7 @@ ls ~/dht-env/bin/python
 Comprovar:
 
 ```bash
-cd ~/termometre-raspberrypi
+cd ~/pi-weather
 git status
 ```
 
@@ -1303,24 +1288,6 @@ tail historial.csv
 
 ---
 
-## La gràfica connecta dues dades que haurien d'estar separades
-
-El límit actual és de 5 minuts.
-
-Comprovar que `script.js` contingui:
-
-```javascript
-const SALT_MAXIM = 5 * 60 * 1000;
-```
-
-I que els gràfics utilitzin:
-
-```javascript
-spanGaps: false
-```
-
----
-
 # Seguretat
 
 No s'han de pujar mai al repositori:
@@ -1353,8 +1320,8 @@ En una instal·lació nova, els passos principals són:
 
 ```bash
 cd ~
-git clone https://github.com/fustcoma/termometre-raspberrypi.git
-cd ~/termometre-raspberrypi
+git clone https://github.com/fustcoma/pi-weather.git
+cd ~/pi-weather
 
 python3 -m venv ~/dht-env
 source ~/dht-env/bin/activate
@@ -1362,7 +1329,7 @@ source ~/dht-env/bin/activate
 pip install adafruit-blinka
 pip install adafruit-circuitpython-dht
 
-git config --global user.name "fustcoma"
+git config --global user.name "EL_TEU_USUARI"
 git config --global user.email "EL_TEU_EMAIL"
 
 git config --global credential.helper store
@@ -1387,8 +1354,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/termometre-raspberrypi
-ExecStart=/home/pi/dht-env/bin/python /home/pi/termometre-raspberrypi/temperatura.py
+WorkingDirectory=/home/pi/pi-weather
+ExecStart=/home/pi/dht-env/bin/python /home/pi/pi-weather/temperatura.py
 Restart=always
 RestartSec=10
 
