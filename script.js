@@ -20,7 +20,6 @@ async function carregarDades() {
         }
 
         const text = await resposta.text();
-
         const linies = text.trim().split(/\r?\n/);
 
         if (linies.length < 4) {
@@ -47,7 +46,8 @@ async function carregarDades() {
                 sensacio.toFixed(2);
         }
 
-        const dataActualitzacio = convertirDataHoraDesDeText(dataHora);
+        const dataActualitzacio =
+            convertirDataHoraDesDeText(dataHora);
 
         if (!isNaN(dataActualitzacio.getTime())) {
             ultimaActualitzacio = dataActualitzacio;
@@ -62,7 +62,8 @@ async function carregarDades() {
 
 async function carregarHistorial() {
     try {
-        const resposta = await fetch("historial.csv?t=" + Date.now());
+        const resposta =
+            await fetch("historial.csv?t=" + Date.now());
 
         if (!resposta.ok) {
             throw new Error("No s'ha pogut carregar historial.csv");
@@ -110,7 +111,8 @@ async function carregarHistorial() {
                 continue;
             }
 
-            const dataHora = convertirDataHora(data, hora);
+            const dataHora =
+                convertirDataHora(data, hora);
 
             if (isNaN(dataHora.getTime())) {
                 continue;
@@ -127,7 +129,8 @@ async function carregarHistorial() {
         }
 
         novesDades.sort((a, b) => {
-            return a.dataHora.getTime() - b.dataHora.getTime();
+            return a.dataHora.getTime() -
+                b.dataHora.getTime();
         });
 
         const haCanviat =
@@ -136,17 +139,25 @@ async function carregarHistorial() {
                 novesDades.length > 0 &&
                 dadesHistorial.length > 0 &&
                 (
-                    novesDades[novesDades.length - 1].dataHora.getTime() !==
-                    dadesHistorial[dadesHistorial.length - 1].dataHora.getTime() ||
+                    novesDades[novesDades.length - 1]
+                        .dataHora.getTime() !==
+                    dadesHistorial[dadesHistorial.length - 1]
+                        .dataHora.getTime() ||
 
-                    novesDades[novesDades.length - 1].temperatura !==
-                    dadesHistorial[dadesHistorial.length - 1].temperatura ||
+                    novesDades[novesDades.length - 1]
+                        .temperatura !==
+                    dadesHistorial[dadesHistorial.length - 1]
+                        .temperatura ||
 
-                    novesDades[novesDades.length - 1].humitat !==
-                    dadesHistorial[dadesHistorial.length - 1].humitat ||
+                    novesDades[novesDades.length - 1]
+                        .humitat !==
+                    dadesHistorial[dadesHistorial.length - 1]
+                        .humitat ||
 
-                    novesDades[novesDades.length - 1].sensacio !==
-                    dadesHistorial[dadesHistorial.length - 1].sensacio
+                    novesDades[novesDades.length - 1]
+                        .sensacio !==
+                    dadesHistorial[dadesHistorial.length - 1]
+                        .sensacio
                 )
             );
 
@@ -166,7 +177,10 @@ async function carregarHistorial() {
         }
 
     } catch (error) {
-        console.error("Error carregant l'historial:", error);
+        console.error(
+            "Error carregant l'historial:",
+            error
+        );
     }
 }
 
@@ -212,12 +226,16 @@ function convertirDataHoraDesDeText(text) {
         return new Date(NaN);
     }
 
-    return convertirDataHora(parts[0], parts[1]);
+    return convertirDataHora(
+        parts[0],
+        parts[1]
+    );
 }
 
 
 function actualitzarTextActualitzacio() {
-    const element = document.getElementById("actualitzacio");
+    const element =
+        document.getElementById("actualitzacio");
 
     if (!element || !ultimaActualitzacio) {
         return;
@@ -231,7 +249,8 @@ function actualitzarTextActualitzacio() {
         ultimaActualitzacio.getMonth() + 1
     ).padStart(2, "0");
 
-    const any = ultimaActualitzacio.getFullYear();
+    const any =
+        ultimaActualitzacio.getFullYear();
 
     const hores = String(
         ultimaActualitzacio.getHours()
@@ -247,14 +266,14 @@ function actualitzarTextActualitzacio() {
 
     const ara = new Date();
 
-    const diferencia =
-        Math.max(
-            0,
-            Math.floor(
-                (ara.getTime() - ultimaActualitzacio.getTime()) /
-                1000
-            )
-        );
+    const diferencia = Math.max(
+        0,
+        Math.floor(
+            (ara.getTime() -
+                ultimaActualitzacio.getTime()) /
+            1000
+        )
+    );
 
     let fa;
 
@@ -263,31 +282,55 @@ function actualitzarTextActualitzacio() {
     } else if (diferencia < 60) {
         fa = `fa ${diferencia} segons`;
     } else if (diferencia < 3600) {
-        const minutsFa = Math.floor(diferencia / 60);
-        fa = `fa ${minutsFa} ${minutsFa === 1 ? "minut" : "minuts"}`;
+        const minutsFa =
+            Math.floor(diferencia / 60);
+
+        fa =
+            `fa ${minutsFa} ${
+                minutsFa === 1
+                    ? "minut"
+                    : "minuts"
+            }`;
     } else if (diferencia < 86400) {
-        const horesFa = Math.floor(diferencia / 3600);
-        fa = `fa ${horesFa} ${horesFa === 1 ? "hora" : "hores"}`;
+        const horesFa =
+            Math.floor(diferencia / 3600);
+
+        fa =
+            `fa ${horesFa} ${
+                horesFa === 1
+                    ? "hora"
+                    : "hores"
+            }`;
     } else {
-        const diesFa = Math.floor(diferencia / 86400);
-        fa = `fa ${diesFa} ${diesFa === 1 ? "dia" : "dies"}`;
+        const diesFa =
+            Math.floor(diferencia / 86400);
+
+        fa =
+            `fa ${diesFa} ${
+                diesFa === 1
+                    ? "dia"
+                    : "dies"
+            }`;
     }
 
     element.textContent =
-        `Última actualització: ${dia}/${mes}/${any} ${hores}:${minuts}:${segons} · ${fa}`;
+        `Última actualització: ${dia}/${mes}/${any} ` +
+        `${hores}:${minuts}:${segons} · ${fa}`;
 }
 
 
 function canviarPeriode(periode) {
     periodeActual = periode;
 
-    document.querySelectorAll(".periode").forEach((boto) => {
-        boto.classList.remove("actiu");
-    });
+    document.querySelectorAll(".periode")
+        .forEach((boto) => {
+            boto.classList.remove("actiu");
+        });
 
-    const botoActiu = document.querySelector(
-        `.periode[data-periode="${periode}"]`
-    );
+    const botoActiu =
+        document.querySelector(
+            `.periode[data-periode="${periode}"]`
+        );
 
     if (botoActiu) {
         botoActiu.classList.add("actiu");
@@ -303,27 +346,31 @@ function obtenirDadesPeriode() {
     }
 
     const ara =
-        dadesHistorial[dadesHistorial.length - 1]
-            .dataHora
-            .getTime();
+        dadesHistorial[
+            dadesHistorial.length - 1
+        ].dataHora.getTime();
 
     let inici;
 
     switch (periodeActual) {
         case "1h":
-            inici = ara - 60 * 60 * 1000;
+            inici =
+                ara - 60 * 60 * 1000;
             break;
 
         case "6h":
-            inici = ara - 6 * 60 * 60 * 1000;
+            inici =
+                ara - 6 * 60 * 60 * 1000;
             break;
 
         case "24h":
-            inici = ara - 24 * 60 * 60 * 1000;
+            inici =
+                ara - 24 * 60 * 60 * 1000;
             break;
 
         case "7d":
-            inici = ara - 7 * 24 * 60 * 60 * 1000;
+            inici =
+                ara - 7 * 24 * 60 * 60 * 1000;
             break;
 
         case "tot":
@@ -331,7 +378,8 @@ function obtenirDadesPeriode() {
             break;
 
         default:
-            inici = ara - 24 * 60 * 60 * 1000;
+            inici =
+                ara - 24 * 60 * 60 * 1000;
     }
 
     return dadesHistorial.filter((dada) => {
@@ -364,7 +412,8 @@ function dividirEnSegments(dades, propietat) {
             const actual =
                 dada.dataHora.getTime();
 
-            const diferencia = actual - anterior;
+            const diferencia =
+                actual - anterior;
 
             if (diferencia > SALT_MAXIM) {
                 segments.push(segmentActual);
@@ -394,7 +443,8 @@ function obtenirFormatTooltip(timestamp) {
         data.getMonth() + 1
     ).padStart(2, "0");
 
-    const any = data.getFullYear();
+    const any =
+        data.getFullYear();
 
     const hores = String(
         data.getHours()
@@ -457,30 +507,103 @@ function obtenirFormatEix(timestamp) {
 }
 
 
+function obtenirEscalaTemperatura(dades) {
+    if (dades.length === 0) {
+        return {
+            min: 0,
+            max: 35
+        };
+    }
+
+    let minim = Infinity;
+    let maxim = -Infinity;
+
+    dades.forEach((dada) => {
+        minim = Math.min(
+            minim,
+            dada.temperatura
+        );
+
+        maxim = Math.max(
+            maxim,
+            dada.temperatura
+        );
+    });
+
+    let min = 0;
+    let max = 35;
+
+    if (minim < 0) {
+        min = Math.floor(
+            minim / 5
+        ) * 5;
+
+        max = 35;
+    }
+
+    if (maxim > 30) {
+        max =
+            Math.ceil(
+                (maxim + 5) / 5
+            ) * 5;
+    }
+
+    if (maxim >= 35) {
+        max =
+            Math.ceil(
+                (maxim + 5) / 5
+            ) * 5;
+    }
+
+    if (minim < 0) {
+        min =
+            Math.floor(
+                (minim - 5) / 5
+            ) * 5;
+    }
+
+    return {
+        min: min,
+        max: max
+    };
+}
+
+
 function crearConfiguracioGrafica(
-    etiqueta,
+    titol,
     dades,
     propietat,
-    unitat
+    unitat,
+    tipusGrafica,
+    configuracioColor
 ) {
     const segments =
-        dividirEnSegments(dades, propietat);
+        dividirEnSegments(
+            dades,
+            propietat
+        );
 
-    const datasets = segments.map(
-        (segment, index) => {
+    const datasets =
+        segments.map((segment) => {
             return {
-                label: etiqueta,
+                label: titol,
                 data: segment,
+
+                borderColor: configuracioColor,
+                backgroundColor: configuracioColor,
+
                 borderWidth: 2,
-                pointRadius: 2,
-                pointHoverRadius: 5,
+
+                pointRadius: 0,
+                pointHoverRadius: 0,
+
                 tension: 0.25,
+
                 fill: false,
                 showLine: true,
                 spanGaps: false
             };
-        }
-    );
+        });
 
     let minX = undefined;
     let maxX = undefined;
@@ -490,9 +613,27 @@ function crearConfiguracioGrafica(
             dades[0].dataHora.getTime();
 
         maxX =
-            dades[dades.length - 1]
-                .dataHora
-                .getTime();
+            dades[
+                dades.length - 1
+            ].dataHora.getTime();
+    }
+
+    let escalaY;
+
+    if (tipusGrafica === "temperatura") {
+        escalaY =
+            obterirEscalaTemperaturaSeguro(
+                dades
+            );
+    } else if (tipusGrafica === "humitat") {
+        escalaY = {
+            min: 0,
+            max: 100
+        };
+    } else {
+        escalaY = {
+            beginAtZero: false
+        };
     }
 
     return {
@@ -514,6 +655,18 @@ function crearConfiguracioGrafica(
             },
 
             plugins: {
+                title: {
+                    display: true,
+                    text: titol,
+                    font: {
+                        size: 18,
+                        weight: "bold"
+                    },
+                    padding: {
+                        bottom: 10
+                    }
+                },
+
                 legend: {
                     display: false
                 },
@@ -525,13 +678,18 @@ function crearConfiguracioGrafica(
                                 return "";
                             }
 
-                            return obtenirFormatTooltip(
+                            return obterFormatTooltipSeguro(
                                 context[0].parsed.x
                             );
                         },
 
                         label: function(context) {
-                            return `${context.parsed.y.toFixed(2)} ${unitat}`;
+                            return (
+                                context.parsed.y
+                                    .toFixed(2) +
+                                " " +
+                                unitat
+                            );
                         }
                     }
                 }
@@ -557,21 +715,39 @@ function crearConfiguracioGrafica(
                                         : 10,
 
                         callback: function(value) {
-                            return obtenirFormatEix(value);
+                            return obterFormatEixSeguro(
+                                value
+                            );
                         }
-                    },
-
-                    grid: {
-                        display: true
                     }
                 },
 
                 y: {
-                    beginAtZero: false,
+                    min:
+                        escalaY.min !== undefined
+                            ? escalaY.min
+                            : undefined,
+
+                    max:
+                        escalaY.max !== undefined
+                            ? escalaY.max
+                            : undefined,
+
+                    beginAtZero:
+                        escalaY.beginAtZero !== undefined
+                            ? escalaY.beginAtZero
+                            : false,
 
                     ticks: {
                         callback: function(value) {
-                            return `${value} ${unitat}`;
+                            return Number(value)
+                                .toFixed(2)
+                                .replace(
+                                    /\.00$/,
+                                    ""
+                                ) +
+                                " " +
+                                unitat;
                         }
                     }
                 }
@@ -581,8 +757,24 @@ function crearConfiguracioGrafica(
 }
 
 
+function obterirEscalaTemperaturaSeguro(dades) {
+    return obtenirEscalaTemperatura(dades);
+}
+
+
+function obterFormatTooltipSeguro(timestamp) {
+    return obtenirFormatTooltip(timestamp);
+}
+
+
+function obterFormatEixSeguro(timestamp) {
+    return obtenirFormatEix(timestamp);
+}
+
+
 function actualitzarGrafiques() {
-    const dades = obtenirDadesPeriode();
+    const dades =
+        obtenirDadesPeriode();
 
     if (graficaTemperatura) {
         graficaTemperatura.destroy();
@@ -597,13 +789,19 @@ function actualitzarGrafiques() {
     }
 
     const canvasTemperatura =
-        document.getElementById("graficaTemperatura");
+        document.getElementById(
+            "graficaTemperatura"
+        );
 
     const canvasHumitat =
-        document.getElementById("graficaHumitat");
+        document.getElementById(
+            "graficaHumitat"
+        );
 
     const canvasSensacio =
-        document.getElementById("graficaSensacio");
+        document.getElementById(
+            "graficaSensacio"
+        );
 
     if (
         !canvasTemperatura ||
@@ -622,35 +820,44 @@ function actualitzarGrafiques() {
     const contextSensacio =
         canvasSensacio.getContext("2d");
 
-    graficaTemperatura = new Chart(
-        contextTemperatura,
-        crearConfiguracioGrafica(
-            "Temperatura",
-            dades,
-            "temperatura",
-            "ºC"
-        )
-    );
+    graficaTemperatura =
+        new Chart(
+            contextTemperatura,
+            crearConfiguracioGrafica(
+                "Temperatura",
+                dades,
+                "temperatura",
+                "ºC",
+                "temperatura",
+                "#ff6384"
+            )
+        );
 
-    graficaHumitat = new Chart(
-        contextHumitat,
-        crearConfiguracioGrafica(
-            "Humitat",
-            dades,
-            "humitat",
-            "%"
-        )
-    );
+    graficaHumitat =
+        new Chart(
+            contextHumitat,
+            crearConfiguracioGrafica(
+                "Humitat",
+                dades,
+                "humitat",
+                "%",
+                "humitat",
+                "#36a2eb"
+            )
+        );
 
-    graficaSensacio = new Chart(
-        contextSensacio,
-        crearConfiguracioGrafica(
-            "Sensació tèrmica",
-            dades,
-            "sensacio",
-            "ºC"
-        )
-    );
+    graficaSensacio =
+        new Chart(
+            contextSensacio,
+            crearConfiguracioGrafica(
+                "Sensació tèrmica",
+                dades,
+                "sensacio",
+                "ºC",
+                "sensacio",
+                "#ff9f40"
+            )
+        );
 }
 
 
