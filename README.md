@@ -1,3 +1,5 @@
+<img src="images/web-icon.png" alt="Pi Weather">
+
 # π Weather
 
 π Weather és una estació meteorològica intel·ligent amb Raspberry Pi Zero i sensor DHT11 per monitoritzar temperatura, humitat i sensació tèrmica en temps real.
